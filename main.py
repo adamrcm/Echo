@@ -1,4 +1,7 @@
 import os
+import requests
+import json
+
 from src.video_processing import extract_video_frames
 from src.prompts import SYSTEM_PROMPTS, get_generation_prompt
 from src.inference import generate_caption
@@ -25,11 +28,25 @@ def run_pipeline(video_path, mock_visual_description):
     results = {}
     for style, system_prompt in SYSTEM_PROMPTS.items():
         print(f"\n🚀 Generating style: [{style.upper()}]...")
-        caption = generate_caption(system_prompt, user_prompt)
+        # 1. Define the model tracking variable at the top of the block
+        model_id = "accounts/fireworks/models/deepseek-v4-pro"
+
+        # 2. Pass it into the caption generator
+        caption = generate_caption(
+            system_prompt,
+            user_prompt,
+            model=model_id
+        )
         print(f"👉 Caption: {caption}")
 
         print(f"⚖️ Running Local LLM-Judge Evaluation...")
-        evaluation = simulate_llm_judge(mock_visual_description, caption, style)
+        # 3. Pass it into your evaluator function
+        evaluation = simulate_llm_judge(
+            mock_visual_description,
+            caption,
+            style,
+            model=model_id
+        )
         print(evaluation)
         print("-" * 40)
 

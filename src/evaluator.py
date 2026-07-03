@@ -3,10 +3,10 @@ import os
 
 client = OpenAI(
     base_url="https://api.fireworks.ai/inference/v1",
-    api_key=os.getenv("FIREWORKS_API_KEY", "mock_key_for_now")
+    api_key="fw_6W1f5dfrb6GEmEjyGk8KqM"
 )
 
-def simulate_llm_judge(visual_description, generated_caption, target_style):
+def simulate_llm_judge(visual_description, generated_caption, target_style, model="accounts/fireworks/models/llama-v3p1-8b-instruct"):
     """
     Simulates the hackathon's LLM-Judge to grade accuracy and tone adherence.
     """
@@ -28,7 +28,7 @@ Reasoning: [one sentence summary]
 
     try:
         response = client.chat.completions.create(
-            model="accounts/fireworks/models/llama-v3p1-70b-instruct", # Use a larger model to judge if possible
+            model=model,
             messages=[{"role": "user", "content": eval_prompt}],
             temperature=0.2
         )
