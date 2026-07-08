@@ -4,8 +4,9 @@ import json
 
 from src.video_processing import extract_video_frames
 from src.prompts import SYSTEM_PROMPTS, get_generation_prompt
-from src.inference import generate_caption
+from src.inference import analyze_video_frame
 from src.evaluator import simulate_llm_judge
+from src.inference import analyze_video_frame, generate_caption
 
 
 def run_pipeline(video_path, mock_visual_description):
@@ -13,25 +14,34 @@ def run_pipeline(video_path, mock_visual_description):
     print(f"🎬 Processing Video: {video_path}")
     print("=" * 60)
 
-    # 1. Video Processing Step
+    # 1. Video Processing Step (Extract metadata and frame.jpg)
     try:
         metadata = extract_video_frames(video_path)
         print(f"Successfully processed video. Duration: {metadata['duration_seconds']}s")
     except Exception as e:
         print(f"Skipping frame extraction (Using mock data): {e}")
-        metadata = {"duration_seconds": 12.5, "total_frames": 375}
+        metadata = {"duration_seconds": 13.0, "total_frames": 390}
 
-    # 2. Construct User Prompt
-    user_prompt = get_generation_prompt(metadata, mock_visual_description)
+    # 2. Vision Analysis Step (Analyze the extracted frame)
+    try:
+        print("📸 Analyzing video frames...")
+        dynamic_description = analyze_video_frame("data/sample_videos/frame.jpg")
+        print(f"📝 Generated Visual Description:\n{dynamic_description}")
+    except Exception as e:
+        print(f"⚠️ Vision analysis failed, falling back to mock description: {e}")
+        dynamic_description = mock_visual_description
+
+    # 3. Construct User Prompt
+    model_id = "accounts/fireworks/models/llama-v3-8b-instruct"
+    user_prompt = get_generation_prompt(metadata, dynamic_description)
 
     # 3. Generate and Evaluate for each required style
     results = {}
     for style, system_prompt in SYSTEM_PROMPTS.items():
         print(f"\n🚀 Generating style: [{style.upper()}]...")
-        # 1. Define the model tracking variable at the top of the block
+
         model_id = "accounts/fireworks/models/deepseek-v4-pro"
 
-        # 2. Pass it into the caption generator
         caption = generate_caption(
             system_prompt,
             user_prompt,
@@ -40,9 +50,8 @@ def run_pipeline(video_path, mock_visual_description):
         print(f"👉 Caption: {caption}")
 
         print(f"⚖️ Running Local LLM-Judge Evaluation...")
-        # 3. Pass it into your evaluator function
         evaluation = simulate_llm_judge(
-            mock_visual_description,
+            dynamic_description,
             caption,
             style,
             model=model_id
@@ -63,3 +72,4 @@ if __name__ == "__main__":
 
     # Run with a dummy path to test our string/mock pipeline integration
     run_pipeline("data/sample_videos/test_clip.mp4", sample_description)
+
