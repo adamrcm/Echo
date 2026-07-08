@@ -1,6 +1,8 @@
 import os
 import base64
 from openai import OpenAI
+import re
+
 
 # Initialize OpenAI SDK pointed directly at Fireworks AI
 client = OpenAI(
@@ -8,9 +10,13 @@ client = OpenAI(
     api_key=os.environ.get("FIREWORKS_API_KEY", "fw_Q5W83bWvL7tdJoomzKZ6LF")
 )
 
+import re
+
+
 def generate_caption(system_prompt, user_prompt, model="accounts/fireworks/models/deepseek-v4-pro"):
     """
-    Generates a caption style variation using DeepSeek-V4-Pro.
+    Generates a caption style variation using DeepSeek-V4-Pro, stripping out reasoning text
+    even if the model completely fails to output the requested XML tags.
     """
     try:
         response = client.chat.completions.create(
@@ -19,10 +25,43 @@ def generate_caption(system_prompt, user_prompt, model="accounts/fireworks/model
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7,
+            temperature=0.3,
             max_tokens=400
         )
-        return response.choices[0].message.content.strip()
+        raw_content = response.choices[0].message.content.strip()
+
+        # Strategy 1: Look for our explicit XML tag markers
+        tag_match = re.search(r"<caption_output>(.*?)</caption_output>", raw_content, re.DOTALL)
+        if tag_match:
+            return tag_match.group(1).strip()
+
+        # Strategy 2: Check if it partially outputted an open tag
+        if "<caption_output>" in raw_content:
+            clean_split = raw_content.split("<caption_output>")[-1].replace("</caption_output>", "")
+            return clean_split.strip()
+
+        # Strategy 3: Dynamic Reasoning Fallback (Crucial for Humorous-Tech)
+        # If the model didn't use tags but dumped a monologue, its final response sentence
+        # is almost always sitting right at the very end of the string (often after "Or maybe:" or "So:")
+        lines = [line.strip() for line in raw_content.split('\n') if line.strip()]
+        if lines:
+            # Look at the final 1 or 2 lines. If it's a complete quote sentence, extract it.
+            last_line = lines[-1]
+            # Strip off wrapping quotes if the model quoted its final idea
+            if (last_line.startswith('"') and last_line.endswith('"')) or (
+                    last_line.startswith("'") and last_line.endswith("'")):
+                return last_line[1:-1].strip()
+
+            # If the last line is a continuation fragment (like 'Or maybe:'), grab the line right before it
+            if len(lines) > 1 and (
+                    last_line.lower().startswith("or ") or last_line.endswith(":") or len(last_line) < 15):
+                fallback_line = lines[-2]
+                return fallback_line.strip(' "')
+
+            return last_line.strip(' "')
+
+        return raw_content
+
     except Exception as e:
         return f"API Error: {str(e)}"
 

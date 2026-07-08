@@ -1,0 +1,7 @@
+.env
+.venv/
+.venv1/
+.venv2/
+__pycache__/
+*.pyc
+data/sample_videos/*.mp4.env

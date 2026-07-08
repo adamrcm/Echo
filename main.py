@@ -60,7 +60,7 @@ def run_pipeline(video_path, mock_visual_description):
         print("-" * 40)
 
         results[style] = {"caption": caption, "evaluation": evaluation}
-
+    return results
 
 if __name__ == "__main__":
     # Temporary mock scene description until launch day provides video formats/VLM access
@@ -72,4 +72,5 @@ if __name__ == "__main__":
 
     # Run with a dummy path to test our string/mock pipeline integration
     run_pipeline("data/sample_videos/test_clip.mp4", sample_description)
+
 

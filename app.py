@@ -38,26 +38,24 @@ if video_file:
                 st.success("✅ Pipeline Executed Successfully!")
                 st.divider()
 
-                # Display Results in clean, responsive column matrices
                 st.subheader("💡 Generated Variations & Judge Scores")
 
-                # Dynamic column layout based on the 4 targeted styles
-                cols = st.columns(len(pipeline_results))
+                # Create 4 distinct tab sections dynamically based on your styles dictionary
+                style_names = [style.upper() for style in pipeline_results.keys()]
+                tabs = st.tabs(style_names)
 
-                for idx, (style, data) in enumerate(pipeline_results.items()):
-                    with cols[idx]:
-                        st.metric(label="Style Track", value=style.upper())
+                # Zip your tabs together with the results data to keep them isolated and clean
+                for tab, (style, data) in zip(tabs, pipeline_results.items()):
+                    with tab:
+                        st.markdown(f"### Track Persona: `{style.upper()}`")
 
-                        st.markdown("**Generated Caption:**")
+                        st.markdown("#### 📝 Generated Caption:")
                         st.info(data.get("caption", "N/A"))
 
-                        st.markdown("**LLM-Judge Evaluation:**")
+                        st.markdown("#### ⚖️ LLM-Judge Evaluation Summary:")
                         st.code(data.get("evaluation", "N/A"), language="markdown")
 
             except Exception as e:
                 st.error(f"Pipeline Error encountered: {str(e)}")
 else:
     st.info("👈 Please drop a video file into the sidebar uploader to begin.")
-    
-    
-return results
