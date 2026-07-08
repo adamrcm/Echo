@@ -35,9 +35,6 @@ CRITICAL: Your final response MUST be enclosed inside XML tags like this:
 
 
 def get_generation_prompt(video_metadata, visual_description):
-    """
-    Combines video data into a clean user prompt with clear output directives.
-    """
     duration = video_metadata.get('duration_seconds', video_metadata.get('duration', 'Unknown'))
 
     return f"""Analyze this video data and generate a caption according to your designated persona rules.

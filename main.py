@@ -14,7 +14,6 @@ def run_pipeline(video_path, mock_visual_description):
     print(f"🎬 Processing Video: {video_path}")
     print("=" * 60)
 
-    # 1. Video Processing Step (Extract metadata and frame.jpg)
     try:
         metadata = extract_video_frames(video_path)
         print(f"Successfully processed video. Duration: {metadata['duration_seconds']}s")
@@ -22,7 +21,7 @@ def run_pipeline(video_path, mock_visual_description):
         print(f"Skipping frame extraction (Using mock data): {e}")
         metadata = {"duration_seconds": 13.0, "total_frames": 390}
 
-    # 2. Vision Analysis Step (Analyze the extracted frame)
+
     try:
         print("📸 Analyzing video frames...")
         dynamic_description = analyze_video_frame("data/sample_videos/frame.jpg")
@@ -31,11 +30,11 @@ def run_pipeline(video_path, mock_visual_description):
         print(f"⚠️ Vision analysis failed, falling back to mock description: {e}")
         dynamic_description = mock_visual_description
 
-    # 3. Construct User Prompt
+
     model_id = "accounts/fireworks/models/llama-v3-8b-instruct"
     user_prompt = get_generation_prompt(metadata, dynamic_description)
 
-    # 3. Generate and Evaluate for each required style
+
     results = {}
     for style, system_prompt in SYSTEM_PROMPTS.items():
         print(f"\n🚀 Generating style: [{style.upper()}]...")
@@ -63,14 +62,14 @@ def run_pipeline(video_path, mock_visual_description):
     return results
 
 if __name__ == "__main__":
-    # Temporary mock scene description until launch day provides video formats/VLM access
+
     sample_description = (
         "A man tries to assemble a complex piece of flat-pack furniture. He is staring "
         "intently at a confusing instruction manual, holds up a single wooden dowel, "
         "looks at a pile of 50 mismatched screws on the floor, and sighs deeply."
     )
 
-    # Run with a dummy path to test our string/mock pipeline integration
+
     run_pipeline("data/sample_videos/test_clip.mp4", sample_description)
 
 
