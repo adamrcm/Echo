@@ -7,7 +7,7 @@ import re
 
 client = OpenAI(
     base_url="https://api.fireworks.ai/inference/v1",
-    api_key=os.environ.get("FIREWORKS_API_KEY", "your_api_key")
+    api_key=os.environ.get("FIREWORKS_API_KEY", "fw_Q5W83bWvL7tdJoomzKZ6LF")
 )
 
 import re

@@ -3,7 +3,7 @@ import os
 
 client = OpenAI(
     base_url="https://api.fireworks.ai/inference/v1",
-    api_key="your_api_key"
+    api_key="fw_Q5W83bWvL7tdJoomzKZ6LF"
 )
 
 def simulate_llm_judge(visual_description, generated_caption, target_style, model="accounts/fireworks/models/llama-v3p1-8b-instruct"):
