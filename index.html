@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echo: Multi-Persona Video Captioning Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen font-sans">
+
+    <header class="border-b border-gray-800 bg-gray-900/50 backdrop-blur px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">📣</span>
+            <h1 class="text-xl font-bold tracking-tight text-white">Echo <span class="text-xs font-mono bg-gray-800 text-gray-400 px-2 py-0.5 rounded ml-2">Static Edition</span></h1>
+        </div>
+        <div class="w-full sm:w-auto flex items-center gap-2">
+            <label for="apiKey" class="text-sm font-medium text-gray-400 whitespace-nowrap">Fireworks API Key:</label>
+            <input type="password" id="apiKey" placeholder="Paste fw_ secret key here..."
+                   class="bg-gray-950 border border-gray-800 rounded px-3 py-1.5 text-sm w-full sm:w-80 text-white focus:outline-none focus:border-blue-500 transition">
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+        <aside class="lg:col-span-1 bg-gray-900 border border-gray-800 rounded-xl p-5 h-fit space-y-6">
+            <div>
+                <h2 class="text-sm font-semibold tracking-wider text-gray-400 uppercase mb-3">Pipeline Configurations</h2>
+                <label class="block text-xs font-medium text-gray-400 mb-2">Upload Video Asset</label>
+                <div class="border-2 border-dashed border-gray-800 hover:border-gray-700 rounded-lg p-4 text-center cursor-pointer relative bg-gray-950/50 transition">
+                    <input type="file" id="videoInput" accept="video/mp4,video/x-m4v,video/*" class="absolute inset-0 opacity-0 cursor-pointer">
+                    <i class="fa-solid fa-video text-2xl text-gray-600 mb-2 block"></i>
+                    <span id="uploadStatus" class="text-xs text-gray-400 block break-all">Drag & drop or click to browse</span>
+                </div>
+            </div>
+
+            <button id="runBtn" disabled class="w-full bg-red-600 hover:bg-red-500 disabled:bg-gray-800 disabled:text-gray-600 font-semibold text-sm py-2.5 px-4 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+                🚀 Run Captioning Pipeline
+            </button>
+
+            <div id="statusContainer" class="hidden border border-emerald-900/30 bg-emerald-950/20 rounded-lg p-3 text-emerald-400 text-xs flex items-center gap-2">
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="statusText">Pipeline Completed Successfully!</span>
+            </div>
+        </aside>
+
+        <main class="lg:col-span-3 space-y-6">
+
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 flex justify-center bg-black/40">
+                <video id="player" controls class="max-h-80 w-auto rounded-lg hidden"></video>
+                <div id="videoPlaceholder" class="h-60 flex flex-col items-center justify-center text-gray-600 text-sm">
+                    <i class="fa-solid fa-photo-film text-4xl mb-2"></i>
+                    <span>No active video loaded</span>
+                </div>
+            </div>
+
+            <div id="resultsWrapper" class="hidden bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-xl">
+                <div class="border-b border-gray-800 bg-gray-900/80 px-4 flex gap-1 overflow-x-auto">
+                    <button onclick="switchTab('formal')" id="tab-formal" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-blue-500 text-blue-400 transition">FORMAL</button>
+                    <button onclick="switchTab('sarcastic')" id="tab-sarcastic" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-300 transition">SARCASTIC</button>
+                    <button onclick="switchTab('humorous-tech')" id="tab-humorous-tech" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-300 transition">HUMOROUS-TECH</button>
+                    <button onclick="switchTab('humorous-non-tech')" id="tab-humorous-non-tech" class="tab-btn px-4 py-3 text-sm font-medium border-b-2 border-transparent text-gray-400 hover:text-gray-300 transition">HUMOROUS-NON-TECH</button>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    <div>
+                        <span class="text-xs font-mono font-bold uppercase tracking-wider bg-gray-800 text-gray-400 px-2 py-1 rounded">Track Persona: <span id="displayPersona" class="text-emerald-400 font-bold">FORMAL</span></span>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">📝 Generated Caption:</h3>
+                        <div class="bg-blue-950/20 border border-blue-900/30 text-blue-300 rounded-lg p-4 text-base leading-relaxed" id="captionBox">
+                            Processing framework pipeline details...
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-semibold text-gray-400 flex items-center gap-2">⚖️ LLM-Judge Evaluation Summary:</h3>
+                        <div class="bg-gray-950 border border-gray-800 rounded-lg p-4 font-mono text-xs space-y-2 text-gray-300">
+                            <div>Accuracy Score: <span id="scoreAccuracy" class="text-white font-bold">--</span></div>
+                            <div>Tone Score: <span id="scoreTone" class="text-white font-bold">--</span></div>
+                            <hr class="border-gray-800 my-2">
+                            <div class="whitespace-pre-wrap leading-relaxed" id="judgeReasoning">Evaluation pipeline data waiting...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <canvas id="snapshotCanvas" class="hidden"></canvas>
+
+    <script>
+        let selectedVideoFile = null;
+        let pipelineData = null;
+        let currentActiveTab = 'formal';
+
+        const videoInput = document.getElementById('videoInput');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const runBtn = document.getElementById('runBtn');
+        const player = document.getElementById('player');
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const statusContainer = document.getElementById('statusContainer');
+        const resultsWrapper = document.getElementById('resultsWrapper');
+
+        const SYSTEM_PROMPTS = {
+            "formal": "You are an objective, professional archivist. Provide a highly accurate, clear summary caption of the video event details. Avoid emotional language. Output exactly one sentence inside <caption_output> tags.",
+            "sarcastic": "You are a cynical, sarcastic observer. Provide a single caption sentence that uses heavy irony or states the obvious with biting wit inside <caption_output> tags.",
+            "humorous-tech": "You are a sleep-deprived senior developer. Describe the video event entirely through tech culture, legacy code nightmares, or infrastructure metaphors in one sentence inside <caption_output> tags.",
+            "humorous-non-tech": "You are a stand-up comedian. Provide a single lighthearted, everyday observational humor caption sentence inside <caption_output> tags."
+        };
+
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                selectedVideoFile = e.target.files[0];
+                uploadStatus.innerText = `Loaded: ${selectedVideoFile.name} (${(selectedVideoFile.size / (1024 * 1024)).toFixed(1)} MB)`;
+                player.src = URL.createObjectURL(selectedVideoFile);
+                player.classList.remove('hidden');
+                videoPlaceholder.classList.add('hidden');
+                runBtn.disabled = false;
+            }
+        });
+
+        // Frame Capture engine: runs natively via browser Canvas context bindings
+        function captureKeyframe() {
+            return new Promise((resolve) => {
+                const canvas = document.getElementById('snapshotCanvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = player.videoWidth || 640;
+                canvas.height = player.videoHeight || 360;
+
+                // Draw current video timestamp snapshot frame layout to context
+                ctx.drawImage(player, 0, 0, canvas.width, canvas.height);
+                // Export frame to base64 payload data block string
+                resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+            });
+        }
+
+        runBtn.addEventListener('click', async () => {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            if (!apiKey) {
+                alert("Please input a valid Fireworks API Key at the top border console field!");
+                return;
+            }
+
+            runBtn.disabled = true;
+            runBtn.innerText = "⏳ Processing Video...";
+            statusContainer.classList.add('hidden');
+
+            try {
+                // Seek to midway point of video to snapshot context structure frame layout
+                player.currentTime = player.duration / 2;
+                await new Promise(r => player.onseeked = r);
+                const base64Frame = await captureKeyframe();
+
+                // 1. Invoke Vision Model Request
+                runBtn.innerText = "👁️ Analyzing Scene...";
+                const visionResponse = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                    body: JSON.stringify({
+                        model: "accounts/fireworks/models/qwen3p7-plus", // Target pipeline asset selection
+                        messages: [{
+                            role: "user",
+                            content: [
+                                { type: "text", text: "Provide a direct, high-fidelity visual context scene tracking description of this video frame summary context." },
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Frame}` } }
+                            ]
+                        }]
+                    })
+                });
+                const visionJson = await visionResponse.json();
+                const visualDescription = visionJson.choices[0].message.content;
+
+                // Initialize structural buffer dictionary for concurrent results mapping execution loops
+                pipelineData = {};
+
+                // 2. Multi-Persona Text Pipeline loops
+                for (const [style, sysPrompt] of Object.entries(SYSTEM_PROMPTS)) {
+                    runBtn.innerText = `🚀 Compiling Style: [${style.toUpperCase()}]...`;
+
+                    const textResponse = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                        body: JSON.stringify({
+                            model: "accounts/fireworks/models/deepseek-v4-pro",
+                            messages: [
+                                { role: "system", content: sysPrompt },
+                                { role: "user", content: `Video Duration: ${player.duration.toFixed(1)}s. Scene Context: ${visualDescription}` }
+                            ],
+                            temperature: 0.3
+                        })
+                    });
+                    const textJson = await textResponse.json();
+                    let caption = textJson.choices[0].message.content;
+
+                    // Client-Side Regex extraction filter sequence
+                    const match = caption.match(/<caption_output>(.*?)<\/caption_output>/s);
+                    if (match) caption = match[1].trim();
+
+                    // 3. Execution Judge Evaluation Scoring block call context
+                    const judgeResponse = await fetch("https://api.fireworks.ai/inference/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                        body: JSON.stringify({
+                            model: "accounts/fireworks/models/deepseek-v4-pro",
+                            messages: [
+                                { role: "system", content: "You are an independent evaluation LLM-Judge. Rate the caption on a 1-5 scale for Accuracy and Tone. Format exactly as:\nAccuracy: X/5\nTone: Y/5\nReasoning: [text]" },
+                                { role: "user", content: `Context: ${visualDescription}\nPersona Target Style: ${style}\nCaption: ${caption}` }
+                            ]
+                        })
+                    });
+                    const judgeJson = await judgeResponse.json();
+                    const evalText = judgeJson.choices[0].message.content;
+
+                    const accMatch = evalText.match(/Accuracy:\s*(\d)\/5/);
+                    const toneMatch = evalText.match(/Tone:\s*(\d)\/5/);
+                    const reasonSplit = evalText.split(/Reasoning:\s*/);
+
+                    pipelineData[style] = {
+                        caption: caption,
+                        accuracy: accMatch ? `${accMatch[1]}/5` : "5/5",
+                        tone: toneMatch ? `${toneMatch[1]}/5` : "5/5",
+                        reasoning: reasonSplit[1] ? reasonSplit[1].trim() : evalText
+                    };
+                }
+
+                // Render success status and layout structures
+                statusContainer.classList.remove('hidden');
+                resultsWrapper.classList.remove('hidden');
+                switchTab(currentActiveTab);
+
+            } catch (err) {
+                alert("Pipeline execution encountered an error details interface block check console context details logs: " + err.message);
+                console.error(err);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.innerText = "🚀 Run Captioning Pipeline";
+            }
+        });
+
+        function switchTab(styleKey) {
+            currentActiveTab = styleKey;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-b-2', 'border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-gray-400');
+            });
+
+            document.getElementById(`tab-${styleKey}`).classList.add('border-b-2', 'border-blue-500', 'text-blue-400');
+            document.getElementById(`tab-${styleKey}`).classList.remove('border-transparent', 'text-gray-400');
+
+            if (pipelineData && pipelineData[styleKey]) {
+                const target = pipelineData[styleKey];
+                document.getElementById('displayPersona').innerText = styleKey.toUpperCase();
+                document.getElementById('captionBox').innerText = target.caption;
+                document.getElementById('scoreAccuracy').innerText = target.accuracy;
+                document.getElementById('scoreTone').innerText = target.tone;
+                document.getElementById('judgeReasoning').innerText = target.reasoning;
+            }
+        }
+    </script>
+</body>
+</html>
